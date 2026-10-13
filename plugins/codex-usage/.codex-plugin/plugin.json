@@ -1,14 +1,15 @@
 {
   "name": "codex-usage",
   "version": "0.1.0",
-  "description": "Local Codex usage statistics and independent collector lifecycle proof",
+  "description": "Local Codex usage statistics, credit estimates, forecasts and history-preserving resets",
   "author": {"name": "digitdash"},
+  "repository": "https://github.com/digitdash/codexcast",
   "skills": "./skills/",
   "mcpServers": "./.mcp.json",
   "hooks": "./hooks/hooks.json",
   "interface": {
     "displayName": "Codex Usage",
-    "shortDescription": "Local usage stats, current and global resets, and one shared collector",
+    "shortDescription": "Local usage stats and resets",
     "defaultPrompt": ["Show my Codex usage stats", "Start the Codex usage collector"]
   }
 }
