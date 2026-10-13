@@ -1,0 +1,14 @@
+{
+  "name": "codex-usage",
+  "version": "0.1.0",
+  "description": "Local Codex usage statistics and independent collector lifecycle proof",
+  "author": {"name": "digitdash"},
+  "skills": "./skills/",
+  "mcpServers": "./.mcp.json",
+  "hooks": "./hooks/hooks.json",
+  "interface": {
+    "displayName": "Codex Usage",
+    "shortDescription": "Local usage stats, current and global resets, and one shared collector",
+    "defaultPrompt": ["Show my Codex usage stats", "Start the Codex usage collector"]
+  }
+}
