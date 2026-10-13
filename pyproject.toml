@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "codex-usage-estimator"
+version = "0.1.0"
+description = "Local Codex quota telemetry and reset-aware burn-rate estimates"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = []
+
+[project.optional-dependencies]
+plugin = ["mcp>=1.12.4,<2"]
+
+[project.scripts]
+codex-usage = "codex_usage.main:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
