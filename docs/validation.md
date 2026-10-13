@@ -6,8 +6,8 @@ telemetry captures and personal runtime configuration were excluded.
 
 ## Automated validation
 
-On 2026-10-13, all 257 tests passed locally, including the 237 inherited estimator
-and plugin tests and 20 installer regressions. The installer tests cover
+On 2026-10-13, all 258 tests passed locally, including the 237 inherited estimator
+and plugin tests and 21 installer regressions. The installer tests cover
 desktop-binary discovery and supported-client fallback, explicit paths with spaces,
 missing executables, older clients without plugin support, unsupported platforms,
 older Python versions, fresh Codex homes, marketplace layout, and collector paths.
@@ -15,7 +15,8 @@ Prerequisite failures are checked before creating installation files. Long home
 paths use a shorter socket directory; existing working baseline locations are
 retained, and explicit relative directories are resolved during installation.
 Very deep homes use an owner-checked, private persistent directory under
-`/Users/Shared`. An unusable or unwritable Codex home fails before modifying an existing
+`/Users/Shared`; a preexisting shared runtime must already be private before
+reuse. An unusable or unwritable Codex home fails before modifying an existing
 plugin or marketplace.
 
 The inherited coverage includes independent timer collection, simultaneous starts,

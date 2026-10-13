@@ -91,6 +91,8 @@ def ensure_private_directory(path):
     identity = path.lstat()
     if not stat.S_ISDIR(identity.st_mode) or identity.st_uid != os.getuid():
         raise ValueError('Collector runtime must be a private directory owned by you')
+    if stat.S_IMODE(identity.st_mode) & 0o077:
+        raise ValueError('Existing collector runtime must already be private; choose a different directory')
     path.chmod(0o700)
 
 

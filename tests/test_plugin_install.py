@@ -245,6 +245,23 @@ class InstallTests(unittest.TestCase):
             with patch.object(Path, 'lstat', return_value=foreign), self.assertRaisesRegex(ValueError, 'owned by you'):
                 secure(path)
 
+    def test_shared_fallback_rejects_an_existing_directory_that_is_not_private(self):
+        secure = self.require('ensure_private_directory')
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            path = root / 'runtime'
+            path.mkdir()
+            path.chmod(0o777)
+            child = path / 'predictable-key'
+            child.mkdir()
+            victim = root / 'victim-file'
+            victim.write_text('preserve this file')
+            (child / 'baselines.sqlite3').symlink_to(victim)
+            with self.assertRaisesRegex(ValueError, 'already be private'):
+                secure(path)
+            self.assertEqual(victim.read_text(), 'preserve this file')
+            self.assertTrue((child / 'baselines.sqlite3').is_symlink())
+
     def test_compatible_home_keeps_the_existing_default_baseline_location(self):
         configure = self.require('make_configuration')
         from codex_usage import collector
