@@ -93,7 +93,8 @@ class InstallTests(unittest.TestCase):
                     patch.object(installer.subprocess, 'run', return_value=SimpleNamespace(returncode=0)), \
                     contextlib.redirect_stderr(stderr), contextlib.redirect_stdout(io.StringIO()):
                 result = main(['--codex-bin', str(binary), '--destination', str(root / 'plugin'),
-                               '--runtime', str(root / 'runtime'), '--marketplace', str(root / 'catalog/marketplace.json')])
+                               '--runtime', str(root / 'runtime'), '--codex-home', str(root / 'profile'),
+                               '--marketplace', str(root / 'catalog/marketplace.json')])
             self.assertEqual(result, 1)
             self.assertIn('.agents/plugins/marketplace.json', stderr.getvalue())
             self.assertFalse((root / 'plugin').exists())
@@ -161,6 +162,89 @@ class InstallTests(unittest.TestCase):
             self.assertLess(len(installer.os.fsencode(result.socket)), 104)
             self.assertEqual(result.root.parent, home / '.codex/usage-runtime')
 
+    def test_deep_home_uses_a_bounded_persistent_collector_directory(self):
+        configure = self.require('make_configuration')
+        from codex_usage import collector
+        home = Path('/Volumes/network-homes') / ('deep-directory/' * 20) / 'user'
+        with tempfile.TemporaryDirectory() as temp, patch.object(Path, 'home', return_value=home), \
+                patch.object(collector, 'DEFAULT_DB', home / 'Library/Application Support/codex-usage-estimator/usage.sqlite3'):
+            result = collector.CollectorConfig(**configure(self.configuration_args(home, Path(temp) / 'plugin')))
+            self.assertLess(len(installer.os.fsencode(result.socket)), 104)
+            self.assertEqual(result.root.parent, Path('/Users/Shared') / f'.codex-usage-{installer.os.getuid()}')
+
+    def test_unusable_new_home_preserves_an_existing_installation(self):
+        main = self.require('main')
+        import json
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            binary = self.executable(root / 'codex')
+            destination = root / 'plugin'
+            (destination / '.codex-plugin').mkdir(parents=True)
+            (destination / '.codex-plugin/plugin.json').write_text(json.dumps({'name':'codex-usage'}))
+            original = '{"codex_home":"original-home"}\n'
+            (destination / 'runtime.json').write_text(original)
+            blocked = root / 'not-a-directory'
+            blocked.write_text('preserve this file')
+            stderr = io.StringIO()
+            with patch.object(installer.sys, 'platform', 'darwin'), \
+                    patch.object(installer.subprocess, 'run', return_value=SimpleNamespace(returncode=0)), \
+                    contextlib.redirect_stderr(stderr):
+                result = main(['--codex-bin', str(binary), '--codex-home', str(blocked / 'profile'),
+                               '--destination', str(destination), '--runtime', str(root / 'runtime'),
+                               '--marketplace', str(root / '.agents/plugins/marketplace.json')])
+            self.assertEqual(result, 1)
+            self.assertEqual((destination / 'runtime.json').read_text(), original)
+            self.assertEqual(blocked.read_text(), 'preserve this file')
+            self.assertFalse((root / 'runtime').exists())
+            self.assertFalse((root / '.agents').exists())
+
+    def test_shared_fallback_directory_is_private_and_rejects_symlinks(self):
+        secure = self.require('ensure_private_directory')
+        import stat
+        with tempfile.TemporaryDirectory() as temp:
+            path = Path(temp) / 'runtime'
+            secure(path)
+            self.assertEqual(stat.S_IMODE(path.stat().st_mode), 0o700)
+            link = Path(temp) / 'linked'
+            link.symlink_to(path)
+            with self.assertRaisesRegex(ValueError, 'private directory'):
+                secure(link)
+
+    def test_unwritable_existing_home_preserves_the_registered_plugin(self):
+        main = self.require('main')
+        import json
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            binary = self.executable(root / 'codex')
+            home = root / 'profile'
+            home.mkdir()
+            plugin = root / 'plugin'
+            (plugin / '.codex-plugin').mkdir(parents=True)
+            (plugin / '.codex-plugin/plugin.json').write_text(json.dumps({'name':'codex-usage'}))
+            original = '{"codex_home":"original-home"}\n'
+            (plugin / 'runtime.json').write_text(original)
+            with patch.object(installer.sys, 'platform', 'darwin'), \
+                    patch.object(installer.subprocess, 'run', return_value=SimpleNamespace(returncode=0)), \
+                    patch.object(installer.tempfile, 'TemporaryFile', side_effect=PermissionError('Read-only Codex home')), \
+                    contextlib.redirect_stderr(io.StringIO()), contextlib.redirect_stdout(io.StringIO()):
+                result = main(['--codex-bin', str(binary), '--codex-home', str(home),
+                               '--destination', str(plugin), '--runtime', str(root / 'runtime'),
+                               '--marketplace', str(root / '.agents/plugins/marketplace.json')])
+            self.assertEqual(result, 1)
+            self.assertEqual((plugin / 'runtime.json').read_text(), original)
+            self.assertFalse((root / 'runtime').exists())
+            self.assertFalse((root / '.agents').exists())
+
+    def test_shared_fallback_rejects_a_directory_owned_by_another_user(self):
+        secure = self.require('ensure_private_directory')
+        import stat
+        with tempfile.TemporaryDirectory() as temp:
+            path = Path(temp) / 'runtime'
+            path.mkdir()
+            foreign = SimpleNamespace(st_mode=stat.S_IFDIR | 0o700, st_uid=installer.os.getuid()+1)
+            with patch.object(Path, 'lstat', return_value=foreign), self.assertRaisesRegex(ValueError, 'owned by you'):
+                secure(path)
+
     def test_compatible_home_keeps_the_existing_default_baseline_location(self):
         configure = self.require('make_configuration')
         from codex_usage import collector
@@ -199,6 +283,7 @@ class InstallTests(unittest.TestCase):
                 try:
                     result = main(['--codex-bin', str(binary), '--destination', str(root / 'plugin'),
                                    '--runtime', str(root / 'runtime'), '--marketplace', str(root / '.agents/plugins/marketplace.json'),
+                                   '--codex-home', str(root / 'profile'),
                                    '--collector-runtime', '/tmp/'+'long'*35])
                 except SystemExit as error:
                     result = error.code

@@ -6,14 +6,17 @@ telemetry captures and personal runtime configuration were excluded.
 
 ## Automated validation
 
-On 2026-10-13, all 252 tests passed locally, including the 237 inherited estimator
-and plugin tests and 15 installer regressions. The installer tests cover
+On 2026-10-13, all 257 tests passed locally, including the 237 inherited estimator
+and plugin tests and 20 installer regressions. The installer tests cover
 desktop-binary discovery and supported-client fallback, explicit paths with spaces,
 missing executables, older clients without plugin support, unsupported platforms,
 older Python versions, fresh Codex homes, marketplace layout, and collector paths.
 Prerequisite failures are checked before creating installation files. Long home
 paths use a shorter socket directory; existing working baseline locations are
 retained, and explicit relative directories are resolved during installation.
+Very deep homes use an owner-checked, private persistent directory under
+`/Users/Shared`. An unusable or unwritable Codex home fails before modifying an existing
+plugin or marketplace.
 
 The inherited coverage includes independent timer collection, simultaneous starts,
 singleton locking, crash/error recovery, stale/stopped stats, both reset scopes,
@@ -36,6 +39,9 @@ desktop client, `codex-cli 0.162.0-alpha.17.2`, and Python MCP SDK 1.30.0:
 - A long home path and a previously nonexistent custom Codex home installed
   successfully and exposed all five tools. The shortened socket path was below
   the macOS limit, and reinstallation preserved its data and runtime location.
+- A very deep home also installed and connected all five tools using a private,
+  persistent runtime directory with a 50-byte socket path. Repeat installation
+  retained its synthetic history and reset metadata.
 - No model turns were submitted by these installation checks.
 
 A built wheel also installed in a fresh environment without dependencies, and

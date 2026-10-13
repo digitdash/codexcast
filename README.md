@@ -132,8 +132,10 @@ History is stored in:
 ```
 
 The existing estimator database is reused when present. Reset cutoffs live in a
-separate metadata file. The plugin stores numeric usage counters and bounded
-model/speed metadata; it does not store conversation text or copy credentials.
+separate private metadata file. Very deep home paths use an owner-only folder
+under `/Users/Shared` for the collector's metadata and socket. The plugin stores
+numeric usage counters and bounded model/speed metadata; it does not store
+conversation text or copy credentials.
 Codex manages authentication and makes its normal account-usage backend requests.
 The plugin has no developer-hosted endpoint. No login service is installed.
 

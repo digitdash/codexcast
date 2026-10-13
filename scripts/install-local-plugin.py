@@ -6,6 +6,7 @@ import os
 from pathlib import Path
 import shlex
 import shutil
+import stat
 import subprocess
 import sys
 import tempfile
@@ -70,8 +71,27 @@ def make_configuration(args):
         # Keep the existing default for compatible installs. Long home paths
         # need a shorter socket directory; the database and key are unchanged.
         configuration['runtime_root'] = str(Path.home() / '.codex/usage-runtime')
-        CollectorConfig(**configuration)
+        try:
+            CollectorConfig(**configuration)
+        except ValueError:
+            # Deep/network homes need a persistent path independent of HOME.
+            # The containing directory is owner-checked and private below.
+            configuration['runtime_root'] = str(short_runtime_directory())
+            CollectorConfig(**configuration)
     return configuration
+
+
+def short_runtime_directory():
+    return Path('/Users/Shared') / f'.codex-usage-{os.getuid()}'
+
+
+def ensure_private_directory(path):
+    path = Path(path)
+    path.mkdir(mode=0o700, exist_ok=True)
+    identity = path.lstat()
+    if not stat.S_ISDIR(identity.st_mode) or identity.st_uid != os.getuid():
+        raise ValueError('Collector runtime must be a private directory owned by you')
+    path.chmod(0o700)
 
 
 def install(args):
@@ -96,6 +116,8 @@ def install(args):
         if not manifest.exists() or json.loads(manifest.read_text()).get('name') != 'codex-usage':
             raise ValueError('Refusing to overwrite a directory that is not this plugin')
     configuration = make_configuration(args)
+    if configuration.get('runtime_root') == str(short_runtime_directory()):
+        ensure_private_directory(configuration['runtime_root'])
     runtime.mkdir(parents=True, exist_ok=True, mode=0o700)
     if not (runtime/'bin/python').exists():
         subprocess.run([sys.executable, '-m', 'venv', str(runtime)], check=True)
@@ -150,8 +172,10 @@ def main(argv=None):
             raise ValueError('--codex-home must name a directory')
         args.codex_bin = find_codex(args.codex_bin)
         env = dict(os.environ, CODEX_HOME=str(codex_home))
-        result = install(args)
         codex_home.mkdir(parents=True, exist_ok=True, mode=0o700)
+        with tempfile.TemporaryFile(dir=codex_home):
+            pass  # Check real write access before replacing a working install.
+        result = install(args)
         root = str(Path(result['marketplace']).parent.parent.parent)
         subprocess.run([args.codex_bin, 'plugin', 'marketplace', 'add', root], env=env,
                        capture_output=True, text=True, check=True, timeout=60)
