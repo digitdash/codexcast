@@ -1,5 +1,7 @@
 # CodexCast — Codex Usage
 
+![Codex Usage stats in chat, showing quota, forecasts, credits, and local activity](docs/images/codex-usage-stats.png)
+
 See your Codex quota, credit balance, usage rates, and estimated time remaining
 without leaving your chat. CodexCast is the repository name; the installed plugin
 is called **Codex Usage**, so you can find it by typing `@` in Codex.
