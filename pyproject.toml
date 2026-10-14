@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=68"]
+requires = ["setuptools>=77"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -7,6 +7,8 @@ name = "codex-usage-estimator"
 version = "0.1.0"
 description = "Local Codex quota telemetry and reset-aware burn-rate estimates"
 readme = "README.md"
+license = "LicenseRef-CodexCast-Community"
+license-files = ["LICENSE"]
 requires-python = ">=3.11"
 dependencies = []
 

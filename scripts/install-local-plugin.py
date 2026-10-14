@@ -98,6 +98,7 @@ def ensure_private_directory(path):
 
 def install(args):
     repo = Path(__file__).resolve().parents[1]
+    license_bytes = (repo/'LICENSE').read_bytes()
     destination = Path(args.destination).expanduser().resolve()
     runtime = Path(args.runtime).expanduser().resolve()
     marketplace = Path(args.marketplace).expanduser().resolve()
@@ -129,6 +130,7 @@ def install(args):
     # Remove launchers from older proof builds so they cannot shadow SDK modules.
     if (destination/'scripts').exists(): shutil.rmtree(destination/'scripts')
     shutil.copytree(repo/'plugins/codex-usage', destination, dirs_exist_ok=True)
+    (destination/'LICENSE').write_bytes(license_bytes)
     bundled = destination/'runtime/codex_usage'
     if bundled.exists(): shutil.rmtree(bundled)
     shutil.copytree(repo/'src/codex_usage', bundled, ignore=shutil.ignore_patterns('__pycache__','*.pyc'))
