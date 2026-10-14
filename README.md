@@ -157,3 +157,35 @@ python3 -m venv .venv
 
 Tests use synthetic telemetry and local subprocesses; they require no account
 credentials or model turns. Use private databases for manual reset testing.
+
+## TODO
+
+**Objective: add native Windows support while preserving macOS behavior.**
+Windows support is planned; the current plugin remains macOS-only.
+
+- [ ] Add Windows installation, Codex executable discovery, data paths, and hook commands.
+- [ ] Adapt collector locking, private IPC, file permissions, and desktop process tracking for Windows.
+- [ ] Verify independent background polling, one collector across multiple chats, both reset scopes, and cleanup when the Windows desktop app exits.
+- [ ] Add Windows CI and publish Windows installation instructions after the client proof passes.
+
+## License
+
+Copyright 2026 Eric Kwak. This project uses the custom
+[CodexCast Community License](LICENSE), a source-available license with
+commercial-distribution restrictions.
+
+| Use | Permission |
+| --- | --- |
+| Personal use, private modifications, and free sharing with the license notice | Allowed without a license fee. |
+| Internal business use, including using the plugin while doing paid work | Allowed without a license fee. |
+| Reselling or renting the plugin, including modified copies | Requires prior written permission from Eric Kwak. |
+| Including the plugin in a paid product, or offering its functionality through a paid service | Requires prior written permission from Eric Kwak. |
+
+Keep the copyright notice and license when redistributing the code. Independently
+created work and outputs that do not contain the plugin's code are unrestricted
+by this license. Third-party dependencies retain their own licenses.
+
+The software is provided as-is, without warranty or liability to the extent
+permitted by law. Read [LICENSE](LICENSE) for the full terms. Contact
+[Eric Kwak through the repository owner's GitHub profile](https://github.com/digitdash)
+to request commercial permission.

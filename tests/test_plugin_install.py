@@ -107,6 +107,31 @@ class InstallTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, 'codex-bin'):
                 find(str(Path(temp) / 'missing'))
 
+    def test_missing_project_license_fails_before_changing_an_existing_install(self):
+        main = self.require('main')
+        import json
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            binary = self.executable(root / 'codex')
+            plugin = root / 'plugin'
+            (plugin / '.codex-plugin').mkdir(parents=True)
+            (plugin / '.codex-plugin/plugin.json').write_text(json.dumps({'name':'codex-usage'}))
+            original = '{"codex_home":"original-home"}\n'
+            (plugin / 'runtime.json').write_text(original)
+            stderr = io.StringIO()
+            with patch.object(installer.sys, 'platform', 'darwin'), \
+                    patch.object(installer, '__file__', str(root / 'checkout/scripts/install-local-plugin.py')), \
+                    patch.object(installer.subprocess, 'run', return_value=SimpleNamespace(returncode=0)), \
+                    contextlib.redirect_stderr(stderr):
+                result = main(['--codex-bin', str(binary), '--codex-home', str(root / 'profile'),
+                               '--destination', str(plugin), '--runtime', str(root / 'runtime'),
+                               '--marketplace', str(root / '.agents/plugins/marketplace.json')])
+            self.assertEqual(result, 1)
+            self.assertIn('LICENSE', stderr.getvalue())
+            self.assertEqual((plugin / 'runtime.json').read_text(), original)
+            self.assertFalse((root / 'runtime').exists())
+            self.assertFalse((root / '.agents').exists())
+
     def test_old_client_fails_before_creating_installation_files(self):
         main = self.require('main')
         with tempfile.TemporaryDirectory() as temp:
